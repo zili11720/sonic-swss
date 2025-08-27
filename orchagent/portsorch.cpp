@@ -6288,7 +6288,6 @@ bool PortsOrch::initializePort(Port &port)
     if (port.m_type == Port::PHY && gTxErrorOrch != nullptr)
     {
         gTxErrorOrch->initializePortState(port.m_alias);
-        SWSS_LOG_NOTICE("Initialized TX error state for port %s", port.m_alias.c_str());
     }
 
     return true;

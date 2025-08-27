@@ -13,7 +13,6 @@
 #include "sairedis.h"
 #include "chassisorch.h"
 #include "stporch.h"
-#include "schema.h"
 
 using namespace std;
 using namespace swss;
@@ -463,11 +462,7 @@ bool OrchDaemon::init()
 
     gNhgMapOrch = new NhgMapOrch(m_applDb, APP_FC_TO_NHG_INDEX_MAP_TABLE_NAME);
 
-    vector<string> tx_error_config_tables = {
-        CFG_TX_ERROR_MONITOR_TABLE_NAME
-    };
-
-    gTxErrorOrch = new TxErrorOrch(m_configDb, m_stateDb, tx_error_config_tables);
+    gTxErrorOrch = new TxErrorOrch(m_configDb, m_stateDb, CFG_TX_ERROR_MONITOR_TABLE_NAME);
 
     /*
      * The order of the orch list is important for state restore of warm start and

@@ -7,11 +7,10 @@
 #include <memory>
 #include <vector>
 
-
 class TxErrorOrch: public Orch
 {
 public:
-    TxErrorOrch(DBConnector *configDb, DBConnector *stateDb,const std::vector<std::string> &tableNames);
+    TxErrorOrch(DBConnector *configDb, DBConnector *stateDb , string tableName);
     ~TxErrorOrch(void);
     void doTask(Consumer &consumer);
     void doTask(swss::SelectableTimer &timer);
@@ -23,9 +22,10 @@ private:
 
     std::shared_ptr<swss::DBConnector> m_countersDb;  
     std::shared_ptr<swss::Table> m_countersTable;     
-    std::shared_ptr<swss::Table> m_stateTable;    
+    std::shared_ptr<swss::Table> m_stateTable;   
+    std::shared_ptr<swss::Table> m_configTable; 
     
-    SelectableTimer* m_timer; ///should I use shared_ptr?
+    SelectableTimer* m_timer; 
     ExecutableTimer* m_executor;
 
     static const int DEFAULT_POLL_INTERVAL_SEC = 10;
@@ -34,11 +34,12 @@ private:
     int m_pollInterval;  
     int m_threshold;
 
-
+    void InitializeMonitorConfiguration();
     void updateTimer(int interval); 
-    void txErrorCounterCheck(const Port& port);
-    void updatePortStatusNotOk(const Port& port);    
-    void updatePortStatusOk(const Port& port);
+    void txErrorCountersCheck();
+    void configPollInterval(int pollInterval);
+    void configThreshold(int threshold);
+    void updatePortStatus(const Port& port, string status);
 };
 
 #endif
