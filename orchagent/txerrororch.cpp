@@ -13,9 +13,8 @@ extern PortsOrch *gPortsOrch;
 
 TxErrorOrch::TxErrorOrch(DBConnector *configDb, DBConnector *stateDb, string tableName) :
     Orch(configDb,tableName),
-    m_stateDb(stateDb),
     m_countersDb(new DBConnector("COUNTERS_DB", 0)),
-    m_stateTable(new Table(m_stateDb, STATE_TX_ERROR_TABLE_NAME)),
+    m_stateTable(new Table(stateDb, STATE_TX_ERROR_TABLE_NAME)),
     m_countersTable(new Table(m_countersDb.get(), COUNTERS_TABLE)),
     m_configTable(new Table(configDb, CFG_TX_ERROR_MONITOR_TABLE_NAME))
 {
@@ -62,19 +61,6 @@ void TxErrorOrch::InitializeMonitorConfiguration()
     m_configTable->set("global", fieldValues);
 
     SWSS_LOG_INFO("Written default TX error monitor configuration to CONFIG_DB");
-}
-
-// Initialize port state to OK in state table
-void TxErrorOrch::initializePortState(const std::string &portAlias)
-{
-    SWSS_LOG_ENTER();
-    
-    vector<FieldValueTuple> fieldValues;
-    fieldValues.emplace_back("status", "OK");
-    
-    m_stateTable->set(portAlias, fieldValues);
-    
-    SWSS_LOG_INFO("Initialized tx error state for port %s", portAlias.c_str());
 }
 
 // Handle configuration changes to tx_error_monitor table (poll_interval, threshold)
@@ -138,6 +124,7 @@ void TxErrorOrch::doTask(swss::SelectableTimer &timer)
     txErrorCountersCheck();
 }
   
+// Check TX error counters for all ports
 void TxErrorOrch::txErrorCountersCheck()
 {
     SWSS_LOG_ENTER();
@@ -173,15 +160,23 @@ void TxErrorOrch::txErrorCountersCheck()
 
         if (tx_errors > static_cast<uint64_t>(m_threshold))
         {
-            SWSS_LOG_DEBUG("TX Error counters for port %s exceeded threshold: %ld > %d", 
-                port.m_alias.c_str(), tx_errors, m_threshold);
-            updatePortStatus(port, "NOT_OK");
+            if(m_portStateMap.find(oid) == m_portStateMap.end() || m_portStateMap[oid] == "OK")
+            {
+                SWSS_LOG_DEBUG("TX Error counters for port %s exceeded threshold: %ld > %d", 
+                    port.m_alias.c_str(), tx_errors, m_threshold);
+                updatePortStatus(port, "NOT_OK");
+                m_portStateMap[oid] = "NOT_OK";
+            }
         }
         else if (tx_errors <= static_cast<uint64_t>(m_threshold))
         {
-            SWSS_LOG_DEBUG("TX Error counters for port %s is below threshold: %ld <= %d", 
-                port.m_alias.c_str(), tx_errors, m_threshold);
-            updatePortStatus(port, "OK");
+            if(m_portStateMap.find(oid) == m_portStateMap.end() || m_portStateMap[oid] == "NOT_OK")
+            {
+                SWSS_LOG_DEBUG("TX Error counters for port %s is below threshold: %ld <= %d", 
+                    port.m_alias.c_str(), tx_errors, m_threshold);
+                updatePortStatus(port, "OK");
+                m_portStateMap[oid] = "OK";
+            }
         }
     }
 }

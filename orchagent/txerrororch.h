@@ -6,6 +6,8 @@
 #include "portsorch.h"
 #include <memory>
 #include <vector>
+#include <map>
+#include <string>
 
 class TxErrorOrch: public Orch
 {
@@ -15,11 +17,7 @@ public:
     void doTask(Consumer &consumer);
     void doTask(swss::SelectableTimer &timer);
 
-    void initializePortState(const std::string &portAlias);
-
 private:
-    swss::DBConnector *m_stateDb;
-
     std::shared_ptr<swss::DBConnector> m_countersDb;  
     std::shared_ptr<swss::Table> m_countersTable;     
     std::shared_ptr<swss::Table> m_stateTable;   
@@ -33,6 +31,9 @@ private:
 
     int m_pollInterval;  
     int m_threshold;
+    
+    // Map to track last known state of each port (OK/NOT_OK)
+    std::map<sai_object_id_t, std::string> m_portStateMap;
 
     void InitializeMonitorConfiguration();
     void updateTimer(int interval); 

@@ -8,7 +8,6 @@
 #include "subintf.h"
 #include "notifications.h"
 #include "stporch.h"
-#include "txerrororch.h"
 
 #include <inttypes.h>
 #include <cassert>
@@ -59,7 +58,6 @@ extern BufferOrch *gBufferOrch;
 extern FdbOrch *gFdbOrch;
 extern SwitchOrch *gSwitchOrch;
 extern StpOrch *gStpOrch;
-extern TxErrorOrch *gTxErrorOrch;
 extern Directory<Orch*> gDirectory;
 extern sai_system_port_api_t *sai_system_port_api;
 extern string gMySwitchType;
@@ -6285,9 +6283,14 @@ bool PortsOrch::initializePort(Port &port)
     }
 
     // Initialize TX error state for physical ports
-    if (port.m_type == Port::PHY && gTxErrorOrch != nullptr)
+    if (port.m_type == Port::PHY)
     {
-        gTxErrorOrch->initializePortState(port.m_alias);
+        Table stateTable(m_state_db.get(), STATE_TX_ERROR_TABLE_NAME);
+        vector<FieldValueTuple> fieldValues;
+        fieldValues.emplace_back("status", "OK");
+        stateTable.set(port.m_alias, fieldValues);
+        
+        SWSS_LOG_NOTICE("Initialized TX error state for port %s to OK", port.m_alias.c_str());
     }
 
     return true;
