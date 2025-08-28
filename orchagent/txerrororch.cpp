@@ -234,3 +234,4 @@ void TxErrorOrch::updatePortStatus(const Port& port, string status)
     m_stateTable->set(port.m_alias, fieldValues);
     SWSS_LOG_NOTICE("Updated port %s status to %s", port.m_alias.c_str(), status.c_str());
 }
+
